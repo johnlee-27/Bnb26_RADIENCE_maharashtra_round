@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Log in — INFLUX</title>
+    <meta name="description" content="Log in to INFLUX, the AI studio for Instagram, LinkedIn and YouTube creators.">
+    <meta name="theme-color" content="#17112B">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="login.css">
+</head>
+<body>
+    <div class="auth" id="auth" data-mode="login">
+        <section class="auth-brand" aria-hidden="true">
+            <div class="auth-ring">
+                <span class="ring ring-outer"></span>
+                <span class="ring ring-inner"></span>
+                <div class="orbit" id="orbit"></div>
+                <p class="wordmark">INFLUX<i></i></p>
+            </div>
+            <div class="auth-pitch">
+                <p class="auth-headline">Everything your next post needs.</p>
+                <p class="auth-lede">Scripts, visuals, short clips, honest feedback, trends and a growth co-pilot, tuned for each platform.</p>
+                <ul class="auth-platforms">
+                    <li><span class="pf-dot instagram"></span>Instagram</li>
+                    <li><span class="pf-dot linkedin"></span>LinkedIn</li>
+                    <li><span class="pf-dot youtube"></span>YouTube</li>
+                </ul>
+            </div>
+        </section>
+
+        <main class="auth-panel">
+            <div class="auth-card">
+                <p class="wordmark wordmark-sm" aria-hidden="true">INFLUX<i></i></p>
+
+                <!-- Shown only while connecting, or when the server can't be reached -->
+                <div class="server-status checking" id="serverStatus" role="status">Connecting to INFLUX…</div>
+
+                <div class="auth-tabs" role="tablist" aria-label="Account">
+                    <button type="button" role="tab" id="tabLogin" data-mode="login" aria-selected="true">Log in</button>
+                    <button type="button" role="tab" id="tabRegister" data-mode="register" aria-selected="false">Create account</button>
+                </div>
+
+                <h1 class="auth-title" id="authTitle">Welcome back</h1>
+                <p class="auth-sub" id="authSub">Log in to pick up where you left off.</p>
+
+                <form class="auth-form" id="authForm" novalidate>
+                    <label class="afield" data-for="register">
+                        <span>Your name</span>
+                        <input name="username" type="text" autocomplete="username" maxlength="30" placeholder="How should we greet you?">
+                        <small class="afield-error" data-error="username"></small>
+                    </label>
+                    <label class="afield" data-for="login">
+                        <span>Email or username</span>
+                        <input name="identifier" type="text" autocomplete="username" autocapitalize="off" spellcheck="false">
+                        <small class="afield-error" data-error="identifier"></small>
+                    </label>
+                    <label class="afield" data-for="register">
+                        <span>Email</span>
+                        <input name="email" type="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="you@example.com">
+                        <small class="afield-error" data-error="email"></small>
+                    </label>
+                    <label class="afield">
+                        <span>Password</span>
+                        <span class="pw">
+                            <input name="password" type="password" autocomplete="current-password">
+                            <button type="button" class="pw-toggle" aria-pressed="false" aria-label="Show password">Show</button>
+                        </span>
+                        <small class="afield-hint" data-for="register">At least 8 characters.</small>
+                        <small class="afield-error" data-error="password"></small>
+                    </label>
+
+                    <p class="form-error" id="formError" role="alert"></p>
+
+                    <button type="submit" class="auth-submit" id="authSubmit">
+                        <span class="spinner" aria-hidden="true"></span><span class="label">Log in</span>
+                    </button>
+                </form>
+
+                <p class="auth-switch" id="authSwitch">New to INFLUX? <button type="button" data-mode="register">Create an account</button></p>
+            </div>
+            <p class="auth-foot">Passwords are stored as secure hashes, never as plain text.</p>
+        </main>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="login.js"></script>
+</body>
+</html>

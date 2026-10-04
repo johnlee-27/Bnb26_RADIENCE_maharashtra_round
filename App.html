@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>INFLUX — AI studio for creators</title>
+    <meta name="description" content="Scripts, images, short clips, feedback, trends and a growth co-pilot for Instagram, LinkedIn and YouTube creators.">
+    <meta name="theme-color" content="#0E0B18">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="app.css">
+    <link rel="stylesheet" href="device.css">
+    <link rel="stylesheet" href="trends.css">
+
+    <!-- Renders the AI's Markdown answers, then sanitizes them -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" defer></script>
+</head>
+<body class="booting">
+    <!-- ================= The studio (iPad) ================= -->
+    <div class="stage" id="studio" hidden>
+        <div class="ambient" aria-hidden="true"></div>
+        <a class="room-brand" href="#/" aria-label="INFLUX home">INFLUX<i></i></a>
+
+        <div class="device" id="device">
+            <span class="device-btn btn-power" aria-hidden="true"></span>
+            <span class="device-btn btn-vol-up" aria-hidden="true"></span>
+            <span class="device-btn btn-vol-down" aria-hidden="true"></span>
+            <span class="device-speaker speaker-l" aria-hidden="true"></span>
+            <span class="device-speaker speaker-r" aria-hidden="true"></span>
+            <span class="device-camera" aria-hidden="true"></span>
+
+            <div class="screen" id="screen">
+                <!-- Wallpaper: the ring light -->
+                <div class="wallpaper" aria-hidden="true">
+                    <span class="ring ring-outer"></span>
+                    <span class="ring ring-inner"></span>
+                    <span class="glow"></span>
+                </div>
+
+                <!-- Status bar -->
+                <header class="status-bar" id="statusBar">
+                    <span class="status-time" id="statusTime">9:41</span>
+                    <span class="status-date" id="statusDate"></span>
+                    <span class="status-right" aria-hidden="true">
+                        <span class="rec" id="recIndicator" title="AI is working"><i></i>Live</span>
+                        <svg class="i" viewBox="0 0 20 14"><path d="M10 12.5 7.6 10a3.4 3.4 0 0 1 4.8 0zM4.6 7a7.6 7.6 0 0 1 10.8 0L14 8.4a5.6 5.6 0 0 0-8 0zM1.5 4a12 12 0 0 1 17 0l-1.4 1.4a10 10 0 0 0-14.2 0z" fill="currentColor"/></svg>
+                        <span class="battery"><i></i></span>
+                    </span>
+                </header>
+
+                <!-- Home screen -->
+                <main class="home" id="home" aria-label="Home screen">
+                    <section class="widgets" aria-label="Widgets">
+                        <article class="widget widget-hello">
+                            <div class="hello-top">
+                                <p class="widget-sub" id="widgetDate"></p>
+                                <button class="avatar" id="avatarBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Account"></button>
+                            </div>
+                            <h1 class="hello-name" id="helloName">Hello</h1>
+                            <p class="hello-question">How would you like to influence today?</p>
+                            <button class="widget-cta" data-open="copilot">Ask C-Pilot what to post today</button>
+
+                            <div class="account-menu" id="accountMenu" role="menu" hidden>
+                                <p class="account-who"><strong id="accountName"></strong><span id="accountEmail"></span></p>
+                                <button role="menuitem" id="logoutBtn">Log out</button>
+                            </div>
+                        </article>
+
+                        <article class="widget widget-engines" aria-live="polite">
+                            <h2>AI engines</h2>
+                            <ul id="engineList">
+                                <li><span class="dot"></span>Checking…</li>
+                            </ul>
+                        </article>
+                    </section>
+
+                    <nav class="app-grid" id="appGrid" aria-label="Apps"></nav>
+                </main>
+
+                <!-- Dock -->
+                <nav class="dock" id="dock" aria-label="Dock"></nav>
+
+                <!-- Opened app renders here -->
+                <section class="app-window" id="appWindow" hidden aria-modal="true" role="dialog"></section>
+
+                <!-- Home indicator: closes the open app -->
+                <button class="home-indicator" id="homeIndicator" aria-label="Go to home screen"><span></span></button>
+
+                <!-- Toasts -->
+                <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

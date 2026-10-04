@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>INFLUX</title>
+<!-- Old page kept so existing links still work. Everything now lives in App.html. -->
+<script>
+  var q = new URLSearchParams(location.search);
+  var map = { script: 'script', image: 'image', clips: 'clips', touchup: 'touchup', trends: 'trends', copilot: 'copilot' };
+  var app = map[q.get('feature')] || '';
+  var platform = q.get('platform') || '';
+  location.replace('App.html' + (app ? '#/' + app + (platform ? '/' + platform : '') : ''));
+</script></head>
+<body><a href="App.html">Open INFLUX</a></body></html>

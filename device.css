@@ -1,0 +1,253 @@
+/* =========================================================================
+   INFLUX — the room and the device (loaded after app.css)
+
+   Room: a dark studio. The screen lights it: a soft glow behind the tablet
+   takes the colours currently on screen (the ring-light wallpaper on the home
+   screen, the open app's colour inside an app) and fades between them.
+   Device: brushed-metal edge, black glass bezel with a fine grain, a glass
+   reflection, camera lens and buttons, and a grounded shadow.
+   Size: as large as the window allows, from an iPad's 1.42 shape up to a
+   16:10 tablet on wide screens, so there's little empty space at the sides.
+   ========================================================================= */
+
+/* Glow colours, animatable (set by app.js through setGlow) */
+@property --glow-a { syntax: "<color>"; inherits: true; initial-value: #5B3FD0; }
+@property --glow-b { syntax: "<color>"; inherits: true; initial-value: #FFB979; }
+@property --glow-c { syntax: "<color>"; inherits: true; initial-value: #FF3554; }
+
+:root {
+    --room: #0E0B18;
+    --glow-a: #5B3FD0;
+    --glow-b: #FFB979;
+    --glow-c: #FF3554;
+    transition: --glow-a .9s ease, --glow-b .9s ease, --glow-c .9s ease;
+    background: var(--room);
+}
+
+body {
+    background: var(--room);
+    color: var(--ink);
+}
+
+/* Fine film grain over the room, so the dark isn't flat */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: .05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Stage ---------- */
+.stage {
+    --pad-y: clamp(12px, 2.6vh, 30px);
+    --pad-x: clamp(16px, 3vw, 56px);
+    /* tablet size: as big as the window allows, from iPad shape (1.42) up to 16:10 */
+    --dev-w: min(1560px,
+                 calc(100vw - 2 * var(--pad-x)),
+                 calc((100dvh - 2 * var(--pad-y)) * 1.6));
+    --dev-h: min(calc(100dvh - 2 * var(--pad-y)), calc(var(--dev-w) / 1.42));
+    position: relative;
+    z-index: 1;
+    min-height: 100dvh;
+    padding: var(--pad-y) var(--pad-x);
+    overflow: hidden;
+    isolation: isolate;
+}
+
+/* The light the screen throws into the room: an enlarged, heavily blurred
+   copy of the screen's colours sitting right behind the tablet, so it spills
+   out past every edge (like a TV's ambilight). */
+.ambient {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: -1;
+    width: var(--dev-w);
+    height: var(--dev-h);
+    transform: translate(-50%, -50%) scale(1.14, 1.2);
+    border-radius: 8%;
+    pointer-events: none;
+    background:
+        radial-gradient(42% 60% at 74% 44%, var(--glow-b), transparent 70%),
+        radial-gradient(40% 55% at 16% 82%, var(--glow-c), transparent 70%),
+        radial-gradient(60% 70% at 30% 30%, var(--glow-a), transparent 75%),
+        var(--glow-a);
+    filter: blur(clamp(50px, 6vw, 90px)) saturate(1.2);
+    opacity: .62;
+    animation: breathe 8s ease-in-out infinite alternate;
+}
+@keyframes breathe {
+    from { opacity: .52; transform: translate(-50%, -50%) scale(1.12, 1.17); }
+    to   { opacity: .68; transform: translate(-50%, -50%) scale(1.17, 1.24); }
+}
+/* A softer, wider halo on the floor and walls */
+.stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+        radial-gradient(60% 55% at 50% 50%, color-mix(in oklab, var(--glow-a) 22%, transparent), transparent 75%),
+        radial-gradient(45% 20% at 50% 100%, color-mix(in oklab, var(--glow-a) 25%, transparent), transparent 80%);
+}
+
+/* Small wordmark in the room, only when there's space beside the tablet */
+.room-brand {
+    position: fixed;
+    top: 22px;
+    left: 26px;
+    z-index: 2;
+    display: none;
+    align-items: flex-start;
+    gap: .06em;
+    font: 800 22px/1 var(--display);
+    letter-spacing: -.04em;
+    color: rgba(255, 255, 255, .88);
+    text-decoration: none;
+}
+.room-brand i {
+    width: .2em;
+    height: .2em;
+    margin-top: .08em;
+    border-radius: 50%;
+    background: var(--rec);
+    box-shadow: 0 0 .35em rgba(255, 53, 84, .8);
+}
+@media (min-aspect-ratio: 19/10) and (min-width: 1100px) {
+    .room-brand { display: inline-flex; }
+}
+
+/* ---------- Device ---------- */
+.device {
+    --frame: clamp(2px, .22vw, 3.5px);           /* metal edge */
+    --bezel-w: clamp(10px, 1.25vw, 18px);        /* black glass around the screen */
+    width: var(--dev-w);
+    height: var(--dev-h);
+    aspect-ratio: auto;
+    padding: var(--bezel-w);
+    border: var(--frame) solid transparent;
+    border-radius: clamp(24px, 3vw, 46px);
+    background:
+        /* black glass */
+        linear-gradient(155deg, #1C1B21 0%, #0B0B0E 38%, #0E0D12 70%, #17161C 100%) padding-box,
+        /* brushed, anodised edge: light catches the corners */
+        conic-gradient(from 210deg at 50% 50%,
+            #3A3A42, #A4A4AE 6%, #4A4A53 14%, #2A2A31 28%, #5E5E68 42%,
+            #2A2A31 55%, #8C8C96 66%, #3A3A42 76%, #23232A 88%, #3A3A42) border-box;
+    box-shadow:
+        /* thin highlight on the outer lip */
+        0 0 0 1px rgba(255, 255, 255, .06),
+        /* contact + soft shadows: grounds the tablet in the room */
+        0 2px 3px rgba(0, 0, 0, .5),
+        0 28px 50px -18px rgba(0, 0, 0, .75),
+        0 60px 120px -40px rgba(0, 0, 0, .8),
+        /* the screen's own light spilling over the edge */
+        0 0 90px -30px color-mix(in oklab, var(--glow-a) 70%, transparent);
+    transition: box-shadow .9s ease;
+}
+
+/* Grain on the metal and bezel (sits behind the screen, so only the frame shows it) */
+.device::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: .5;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* Glass reflection across the whole front (very faint, never blocks clicks) */
+.device::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 70;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+        linear-gradient(118deg, rgba(255, 255, 255, .075) 0%, rgba(255, 255, 255, .02) 22%, transparent 34%),
+        linear-gradient(118deg, transparent 72%, rgba(255, 255, 255, .025) 86%, transparent 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09), inset 0 -1px 0 rgba(0, 0, 0, .5);
+}
+
+.screen {
+    position: relative;
+    z-index: 1;
+    border-radius: clamp(14px, 1.8vw, 28px);
+    /* scale everything inside with whichever side is tighter */
+    font-size: clamp(8px, min(1.24cqw, 1.9cqh), 16px);
+}
+/* Where glass meets display: a hairline and a soft inner shade */
+.screen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 60;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .55), inset 0 0 14px rgba(0, 0, 0, .18);
+}
+
+/* Front camera: a real-looking lens */
+.device-camera {
+    left: calc(var(--bezel-w) / 2 - 4px);
+    width: 8px;
+    height: 8px;
+    background: radial-gradient(circle at 36% 34%, #6C7BB0 0 12%, #23283A 30%, #0A0B10 62%);
+    box-shadow: 0 0 0 1.5px #1A1A20, 0 0 0 2.5px rgba(255, 255, 255, .04);
+    z-index: 2;
+}
+
+/* Hardware buttons on the top edge */
+.device-btn {
+    position: absolute;
+    top: calc(-1 * var(--frame) - 3px);
+    height: 4px;
+    border-radius: 3px 3px 0 0;
+    background: linear-gradient(180deg, #5C5C66, #34343B 55%, #1F1F25);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1);
+    z-index: -1;
+}
+.btn-power { left: 7%; width: 5.5%; }
+.btn-vol-up { right: 9%; width: 4.5%; }
+.btn-vol-down { right: 14.5%; width: 4.5%; }
+
+/* Speaker slots on the short edges */
+.device-speaker {
+    position: absolute;
+    top: 50%;
+    width: 2px;
+    height: 9%;
+    transform: translateY(-50%);
+    border-radius: 2px;
+    background: repeating-linear-gradient(180deg, #050506 0 3px, transparent 3px 6px);
+    opacity: .7;
+}
+.speaker-l { left: calc(var(--bezel-w) / 2 - 1px); top: 30%; }
+.speaker-r { right: calc(var(--bezel-w) / 2 - 1px); }
+
+/* ---------- Phones and very small windows: full screen, no hardware ---------- */
+@media (max-width: 760px), (max-height: 480px) {
+    .stage { padding: 0; }
+    .ambient, .stage::before, .room-brand, .device-btn, .device-speaker, .device::before, .device::after, .screen::after { display: none; }
+    .device {
+        width: 100vw;
+        height: 100dvh;
+        border: 0;
+        padding: 0;
+        border-radius: 0;
+        box-shadow: none;
+        background: var(--wall);
+    }
+    .screen { font-size: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ambient { animation: none; }
+}

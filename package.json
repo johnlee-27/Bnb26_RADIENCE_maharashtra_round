@@ -1,0 +1,13 @@
+{
+  "name": "influx",
+  "private": true,
+  "description": "INFLUX - AI studio for creators. Run npm install, then npm start, from this folder.",
+  "scripts": {
+    "postinstall": "npm install --prefix backend",
+    "start": "npm start --prefix backend",
+    "dev": "npm run dev --prefix backend"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

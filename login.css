@@ -1,0 +1,408 @@
+/* =========================================================================
+   INFLUX — Login page (login.html)
+   Self-contained: this file has everything the login page needs.
+   Left: the brand ring light, with the six apps sitting on it like its bulbs.
+   Right: a calm paper panel with the form.
+   ========================================================================= */
+
+:root {
+    --room: #E8E5EE;          /* page behind the device */
+    --bezel: #1D1C21;
+    --wall: #17112B;          /* wallpaper ink */
+    --halo: #FFF1D6;          /* ring light */
+    --rec: #FF3554;           /* "recording" red: brand dot + live indicator */
+    --paper: #F7F6F9;         /* app background */
+    --card: #FFFFFF;
+    --ink: #17131F;           /* text + primary buttons */
+    --muted: #6B6779;
+    --line: #E5E2EB;
+    --field: #F2F1F5;
+    --ok: #12B886;
+    --warn: #F59F00;
+
+    --display: "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif;
+    --ui: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; }
+body {
+    font-family: var(--ui);
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+input { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* App icons on the ring */
+.app-tile {
+    display: grid;
+    place-items: center;
+    width: 5.5em;
+    height: 5.5em;
+    border-radius: 1.35em;
+    background: linear-gradient(160deg, var(--tint-hi), var(--tint));
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .35),
+        inset 0 -1px 0 rgba(0, 0, 0, .12),
+        0 .6em 1.4em -0.4em rgba(0, 0, 0, .55);
+    color: #fff;
+    transition: transform .18s var(--ease);
+}
+.app-tile svg { width: 48%; height: 48%; }
+
+/* Platform dots */
+.pf-dot { width: .6em; height: .6em; border-radius: 50%; }
+.pf-dot.instagram { background: linear-gradient(135deg, #FEDA75, #D62976 55%, #4F5BD5); }
+.pf-dot.linkedin { background: #0A66C2; }
+.pf-dot.youtube { background: #FF0033; }
+
+.spinner { display: none; }
+.primary.loading .spinner { display: inline-block; }
+
+.spinner {
+    width: 1em; height: 1em;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, .35);
+    border-top-color: #fff;
+    animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Layout ---------- */
+.auth {
+    min-height: 100dvh;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(400px, 1fr);
+    background: var(--paper);
+}
+
+/* ---------- Brand side ---------- */
+.auth-brand {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(28px, 5vh, 56px);
+    padding: 48px 40px;
+    color: #fff;
+    background:
+        radial-gradient(28% 30% at 14% 88%, rgba(255, 53, 84, .2), transparent 70%),
+        radial-gradient(90% 80% at 50% 40%, #2C2058 0%, #1C1538 50%, #110C22 100%);
+}
+
+.auth-ring {
+    --size: min(50vh, 32vw, 500px);
+    position: relative;
+    margin: calc(var(--size) * .08) 0;   /* room for the app tiles that sit on the ring's edge */
+    width: var(--size);
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+}
+.auth-ring .ring {
+    position: absolute;
+    inset: 0;
+    width: auto;          /* undo the iPad wallpaper sizing in app.css */
+    height: auto;
+    transform: none;
+    border-radius: 50%;
+}
+.auth-ring .ring-outer {
+    border: calc(var(--size) * .03) solid var(--halo);
+    opacity: .55;
+    filter: blur(calc(var(--size) * .012));
+    box-shadow:
+        0 0 calc(var(--size) * .12) rgba(255, 200, 140, .5),
+        inset 0 0 calc(var(--size) * .12) rgba(255, 200, 140, .4);
+}
+.auth-ring .ring-inner {
+    inset: 21%;
+    border: 1.5px solid rgba(255, 241, 214, .22);
+}
+
+/* The six apps sit on the ring. JS sets --a (angle) and --i (order) on each. */
+.orbit { position: absolute; inset: 0; }
+.orbit .app-tile {
+    --r: calc(var(--size) / 2);
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(var(--size) * .15);
+    height: calc(var(--size) * .15);
+    margin: calc(var(--size) * -.075) 0 0 calc(var(--size) * -.075);
+    border-radius: 26%;
+    font-size: calc(var(--size) / 50);
+    transform: rotate(var(--a)) translate(var(--r)) rotate(calc(-1 * var(--a)));
+    animation: settle .9s cubic-bezier(.2, .9, .25, 1.15) both;
+    animation-delay: calc(var(--i) * 70ms + 150ms);
+}
+.orbit .app-tile svg { width: 48%; height: 48%; }
+@keyframes settle {
+    from { transform: rotate(var(--a)) translate(0) rotate(calc(-1 * var(--a))) scale(.3); opacity: 0; }
+}
+
+.wordmark {
+    position: relative;
+    display: inline-flex;
+    align-items: flex-start;
+    gap: .06em;
+    font: 800 calc(var(--size, 400px) * .15)/1 var(--display);
+    font-variation-settings: "opsz" 96;
+    letter-spacing: -.045em;
+    color: #fff;
+}
+.wordmark i {
+    width: .16em;
+    height: .16em;
+    margin-top: .1em;
+    border-radius: 50%;
+    background: var(--rec);
+    box-shadow: 0 0 .25em rgba(255, 53, 84, .7);
+}
+
+.auth-pitch {
+    max-width: 30em;
+    text-align: center;
+}
+.auth-headline {
+    font: 700 clamp(26px, 2.6vw, 38px)/1.12 var(--display);
+    letter-spacing: -.025em;
+}
+.auth-lede {
+    margin-top: .7em;
+    color: rgba(255, 255, 255, .72);
+    font-size: clamp(15px, 1.1vw, 17px);
+    line-height: 1.55;
+}
+.auth-platforms {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    gap: 1.4em;
+    margin-top: 1.4em;
+    font-size: 14px;
+    color: rgba(255, 255, 255, .8);
+}
+.auth-platforms li { display: inline-flex; align-items: center; gap: .5em; }
+
+/* ---------- Form side ---------- */
+.auth-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 32px 28px;
+    --tint: var(--ink);
+}
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+    margin: auto 0;
+}
+.wordmark-sm { display: none; }
+
+.auth-tabs {
+    display: flex;
+    padding: 4px;
+    margin-bottom: 36px;
+    border-radius: 14px;
+    background: #ECEAF1;
+}
+.auth-tabs button {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 11px;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--muted);
+    transition: background .2s, color .2s, box-shadow .2s;
+}
+.auth-tabs button[aria-selected="true"] {
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgba(23, 19, 31, .12), 0 0 0 1px rgba(23, 19, 31, .04);
+}
+
+.auth-title {
+    font: 700 34px/1.1 var(--display);
+    letter-spacing: -.025em;
+}
+.auth-sub {
+    margin: 8px 0 28px;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.auth-form { display: flex; flex-direction: column; gap: 18px; }
+
+.afield { display: flex; flex-direction: column; gap: 7px; }
+.afield > span:first-child { font-size: 14px; font-weight: 600; }
+.afield input {
+    width: 100%;
+    height: 48px;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: #fff;
+    font-size: 16px;
+    transition: border-color .15s, box-shadow .15s;
+}
+.afield input::placeholder { color: #A29EAF; }
+.afield input:hover { border-color: #CFCBD8; }
+.afield input:focus {
+    outline: none;
+    border-color: var(--ink);
+    box-shadow: 0 0 0 4px rgba(23, 19, 31, .08);
+}
+.afield.invalid input { border-color: #D7263D; }
+.afield.invalid input:focus { box-shadow: 0 0 0 4px rgba(215, 38, 61, .12); }
+.afield-hint { color: var(--muted); font-size: 13px; }
+.afield-error { color: #C0182F; font-size: 13px; font-weight: 500; }
+.afield-error:empty { display: none; }
+.afield.invalid .afield-hint { display: none; }
+
+.pw { position: relative; display: block; }
+.pw input { padding-right: 72px; }
+.pw-toggle {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+}
+.pw-toggle:hover { background: var(--field); color: var(--ink); }
+
+/* Fields that belong to the other mode */
+.auth[data-mode="login"] [data-for="register"],
+.auth[data-mode="register"] [data-for="login"] { display: none; }
+
+.form-error {
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #FFF1F3;
+    border: 1px solid #FFD0D8;
+    color: #8A1630;
+    font-size: 14px;
+    line-height: 1.45;
+}
+.form-error:empty { display: none; }
+
+.auth-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 52px;
+    margin-top: 6px;
+    border-radius: 999px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    transition: background .15s, transform .15s, opacity .2s;
+}
+.auth-submit:hover { background: #2A2535; }
+.auth-submit:active { transform: scale(.985); }
+.auth-submit:disabled { opacity: .6; cursor: progress; }
+.auth-submit .spinner { display: none; }
+.auth-submit.loading .spinner { display: inline-block; }
+
+.auth-switch {
+    margin-top: 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 15px;
+}
+.auth-switch button {
+    color: var(--ink);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.auth-foot {
+    margin-top: 32px;
+    color: #9A96A6;
+    font-size: 13px;
+    text-align: center;
+}
+
+/* Leaving the login screen */
+.auth.leaving { animation: auth-out .45s ease forwards; pointer-events: none; }
+@keyframes auth-out { to { opacity: 0; transform: scale(1.02); } }
+.stage.entering .device { animation: device-in .6s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes device-in { from { opacity: 0; transform: translateY(16px) scale(.97); } }
+
+/* ---------- Narrow screens: brand becomes a header band ---------- */
+@media (max-width: 900px) {
+    .auth { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .auth-brand {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 20px;
+        padding: 28px 24px;
+        min-height: 0;
+    }
+    .auth-ring { --size: 132px; flex: none; margin: 10px; }
+    .auth-ring .wordmark { display: none; }
+    .orbit .app-tile { width: calc(var(--size) * .2); height: calc(var(--size) * .2); margin: calc(var(--size) * -.1) 0 0 calc(var(--size) * -.1); }
+    .auth-pitch { text-align: left; }
+    .auth-headline { font-size: 22px; }
+    .auth-lede { font-size: 14px; }
+    .auth-platforms { display: none; }
+    .wordmark-sm {
+        display: inline-flex;
+        --size: 160px;
+        color: var(--ink);
+        margin-bottom: 20px;
+        font-size: 30px;
+    }
+    .auth-panel { padding: 28px 20px 24px; }
+    .auth-tabs { margin-bottom: 26px; }
+    .auth-title { font-size: 28px; }
+}
+@media (max-width: 520px) {
+    .auth-brand { padding: 22px 20px; }
+    .auth-ring { --size: 96px; }
+    .auth-lede { display: none; }
+    .auth-headline { font-size: 20px; }
+}
+
+
+/* ---------- Server status (above the form) ---------- */
+.server-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 22px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.45;
+}
+.server-status::before {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+.server-status.checking { background: var(--field); color: var(--muted); }
+.server-status.offline { background: #FFF6E5; color: #7A4A00; border: 1px solid #FFE1A8; }
+.server-status.offline strong { display: block; color: #5C3700; }
+.server-status code { padding: 1px 5px; border-radius: 5px; background: rgba(0, 0, 0, .06); font-size: 13px; }
+.server-status button { margin-top: 6px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
