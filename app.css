@@ -686,6 +686,8 @@ fieldset.field legend { margin-bottom: .45em; }
 .clip.wide .clip-phone video { aspect-ratio: 16 / 9; border-radius: .6em; }
 .clip h3 { font: 700 1em/1.3 var(--display); }
 .clip p { color: var(--muted); font-size: .88em; line-height: 1.45; }
+.clip-actions { display: flex; gap: .4em; flex-wrap: wrap; }
+.clip-actions .ghost:disabled { opacity: .6; }
 .clip .time { font-variant-numeric: tabular-nums; color: var(--tint-ink); font-weight: 600; font-size: .82em; }
 
 /* Muse score */

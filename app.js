@@ -32,6 +32,8 @@ const ICON = {
     send: svg('<path d="M5 12h14M13 6l6 6-6 6"/>'),
     refresh: svg('<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>'),
     mail: svg('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>'),
+    library: svg('<path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2.2h7.5A2.5 2.5 0 0 1 21 9.7v7.8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5Z"/><path d="m10 11.5 4 2.3-4 2.3Z"/>'),
+    save: svg('<path d="M12 4v10M8 10l4 4 4-4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>'),
 };
 
 /* ---------- Apps ---------- */
@@ -42,9 +44,10 @@ const APPS = [
     { id: 'touchup', name: 'Muse', blurb: 'Feedback before you post', tint: '#D63B98', hi: '#F07CC2', ink: '#9C146A', soft: '#FCE8F4' },
     { id: 'trends', name: 'Trends', blurb: "What's working right now", tint: '#0FA47A', hi: '#3FCDA0', ink: '#07714F', soft: '#E2F6EF' },
     { id: 'copilot', name: 'C-Pilot', blurb: 'Ask anything about growing', tint: '#2F7BF5', hi: '#6BA4FF', ink: '#1452BB', soft: '#E6F0FF' },
+    { id: 'library', name: 'Library', blurb: 'All your videos, images, audio and files', tint: '#0891B2', hi: '#3CC3DE', ink: '#066A84', soft: '#E0F5FA', noPlatform: true },
     { id: 'about', name: 'About', blurb: 'What INFLUX does', tint: '#6B6779', hi: '#9C98AA', ink: '#45404F', soft: '#EFEEF3', noPlatform: true },
 ];
-const DOCK = ['script', 'image', 'clips', 'copilot', '|', 'about'];
+const DOCK = ['script', 'image', 'clips', 'copilot', '|', 'library'];
 
 const PLATFORMS = {
     instagram: { name: 'Instagram', ratio: '4:5', format: 'Instagram post' },
@@ -61,6 +64,7 @@ const state = {
     handoff: null,          // data passed from one app to another
     chats: { instagram: [], linkedin: [], youtube: [] },
     images: [],             // ImageGen results this session
+    library: null,          // Library contents (loaded when the Library opens)
     current: null,          // open app id
     user: null,             // signed-in account { id, username, email }
     originRect: null,       // where the open animation starts
@@ -495,6 +499,7 @@ const APP_VIEWS = {
                 canvas.innerHTML = `
                     <div class="canvas-toolbar"><h2>${PLATFORMS[state.platform].name} script</h2>
                         <button class="ghost" data-act="copy">${ICON.copy}Copy</button>
+                        <button class="ghost" data-act="save">${ICON.save}Save</button>
                         <button class="ghost" data-act="thumb">${ICON.image}Make a visual</button>
                         <button class="ghost" data-act="again">${ICON.refresh}Rewrite</button></div>
                     <article class="doc">${md(script)}</article>`;
@@ -511,6 +516,10 @@ const APP_VIEWS = {
             if (act === 'copy') copyText(lastScript);
             if (act === 'again') run();
             if (act === 'thumb') handOff('image', topic.value.trim());
+            if (act === 'save') {
+                const title = topic.value.trim().slice(0, 50) || 'Script';
+                saveToLibrary(new Blob([lastScript], { type: 'text/markdown' }), `${title}.md`, { source: 'Scripting' });
+            }
         });
     },
 
@@ -544,6 +553,7 @@ const APP_VIEWS = {
                 </div>
                 ${loading ? '' : `<div class="image-actions">
                     <a class="ghost" href="${img.src}" download="influx-${img.platform}-${current + 1}.${img.src.startsWith('data:image/jpeg') ? 'jpg' : 'png'}">${ICON.download}Download</a>
+                    <button class="ghost" data-act="save">${ICON.save}Save to Library</button>
                     <button class="ghost" data-act="muse">${ICON.touchup}Get feedback in Muse</button>
                 </div>`}
                 ${state.images.length > 1 ? `<div class="history" aria-label="This session">${state.images.map((im, i) =>
@@ -574,6 +584,14 @@ const APP_VIEWS = {
             const pick = e.target.closest('[data-i]');
             if (pick) { current = Number(pick.dataset.i); draw(); }
             if (e.target.closest('[data-act="muse"]')) handOff('touchup', { image: state.images[current].src });
+            if (e.target.closest('[data-act="save"]')) {
+                const img = state.images[current];
+                fetch(img.src).then((r) => r.blob()).then((blob) => {
+                    const ext = blob.type.includes('png') ? 'png' : 'jpg';
+                    const name = `${img.prompt.slice(0, 40).trim() || 'image'}.${ext}`;
+                    return saveToLibrary(blob, name, { source: 'ImageGen', platform: img.platform });
+                });
+            }
         });
     },
 
@@ -592,7 +610,8 @@ const APP_VIEWS = {
 
         const zone = $('[data-drop]', form);
         let file = null;
-        bindDropzone(zone, (f) => {
+        let lastClips = [];
+        const pickVideo = (f) => {
             file = f;
             zone.classList.add('has-file');
             const url = URL.createObjectURL(f);
@@ -605,7 +624,17 @@ const APP_VIEWS = {
                 zone.querySelector('small').textContent = `${fmtTime(v.duration)} long, ${fmtSize(f.size)}. Click to change.`;
                 URL.revokeObjectURL(url);
             };
-        });
+        };
+        bindDropzone(zone, pickVideo);
+
+        // Opened from the Library with a video
+        const fromLibrary = takeHandoff('clips');
+        if (fromLibrary?.video) {
+            zone.querySelector('strong').textContent = `Loading ${fromLibrary.name}…`;
+            fetch(fromLibrary.video).then((r) => r.blob())
+                .then((b) => pickVideo(new File([b], fromLibrary.name, { type: b.type || 'video/mp4' })))
+                .catch(() => toast("Couldn't load that video from the Library"));
+        }
 
         $$('[data-step]', form).forEach((b) => b.addEventListener('click', () => {
             const n = Math.min(6, Math.max(1, Number(form.elements.count.value) + Number(b.dataset.step)));
@@ -647,21 +676,44 @@ const APP_VIEWS = {
                     (p) => { $('.bar i', s1).style.width = `${Math.round(p * 100)}%`; },
                     () => { s1.className = 'done'; $('.state', s1).textContent = '✓'; s2.className = 'active'; });
                 const wide = state.platform === 'linkedin';
+                lastClips = clips.map((c) => ({ ...c, platform: state.platform }));
                 canvas.innerHTML = !clips.length
                     ? emptyState(app, 'No strong moments found', 'Try a longer video with more talking or action.')
-                    : `<div class="canvas-toolbar"><h2>${clips.length} clip${clips.length > 1 ? 's' : ''} for ${PLATFORMS[state.platform].name}</h2></div>
+                    : `<div class="canvas-toolbar"><h2>${clips.length} clip${clips.length > 1 ? 's' : ''} for ${PLATFORMS[state.platform].name}</h2>
+                        <button class="ghost" data-save-clip="all">${ICON.save}Save all to Library</button></div>
                        <div class="clips">${clips.map((c, i) => `
                         <article class="clip ${wide ? 'wide' : ''}">
                             <div class="clip-phone"><video src="${API_BASE + c.url}" controls preload="metadata" playsinline></video></div>
                             <span class="time">${fmtTime(c.start)} – ${fmtTime(c.end)} of the original</span>
                             <h3>${escapeHtml(c.title)}</h3>
                             <p>${escapeHtml(c.reason)}</p>
-                            <a class="ghost" style="align-self:flex-start" href="${API_BASE + c.url}" download="clip-${i + 1}.mp4">${ICON.download}Download</a>
+                            <div class="clip-actions">
+                                <a class="ghost" href="${API_BASE + c.url}" download="clip-${i + 1}.mp4">${ICON.download}Download</a>
+                                <button class="ghost" data-save-clip="${i}">${ICON.save}Save</button>
+                            </div>
                         </article>`).join('')}</div>`;
             } catch (err) {
                 canvas.innerHTML = errorCard(err);
             } finally {
                 setLoading(button, false, 'Make clips');
+            }
+        });
+
+        canvas.addEventListener('click', async (e) => {
+            const btn = e.target.closest('[data-save-clip]');
+            if (!btn || btn.disabled) return;
+            const picks = btn.dataset.saveClip === 'all' ? lastClips : [lastClips[Number(btn.dataset.saveClip)]];
+            btn.disabled = true;
+            try {
+                const files = await Promise.all(picks.map(async (c) => {
+                    const blob = await (await fetch(API_BASE + c.url)).blob();
+                    const name = `${c.title.replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'clip'}.mp4`;
+                    return new File([blob], name, { type: 'video/mp4' });
+                }));
+                await saveToLibrary(files, null, { source: 'VideoClip', platform: picks[0].platform });
+                btn.innerHTML = `${ICON.save}Saved`;
+            } catch {
+                btn.disabled = false;
             }
         });
     },
@@ -685,6 +737,7 @@ const APP_VIEWS = {
         };
         bindDropzone(zone, showImage);
 
+        if (handoff?.text) form.elements.text.value = handoff.text;
         if (handoff?.image) {
             fetch(handoff.image).then((r) => r.blob()).then((b) => showImage(new File([b], 'imagegen.' + (b.type.includes('jpeg') ? 'jpg' : 'png'), { type: b.type })));
         }
